@@ -1,0 +1,29 @@
+# CI smoke gate template — copy to .github/workflows/benchmark.yml to enable.
+# Lives here (not under .github/workflows/) so contributor PRs do not add
+# executable workflow definitions without maintainer review.
+name: API benchmark smoke
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --workspace apps/api --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - run: npm run benchmark:smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-benchmark-results
+          path: benchmarks/results/
+          if-no-files-found: warn
